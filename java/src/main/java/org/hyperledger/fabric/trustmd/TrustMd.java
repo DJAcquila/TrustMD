@@ -102,7 +102,7 @@ public class TrustMd extends ChaincodeBase {
         final Trust trustAsset = buildTrustAsset(args);
         final boolean exists = trustExists(stub, trustAsset.getEvaluatedNodeId());
         if (exists) {
-            throw new RuntimeException("The asset " + trustAsset.getEvaluatedNodeId() + " already exists");
+            return newErrorResponse("The asset " + trustAsset.getEvaluatedNodeId() + " already exists");
         }
         try {
             stub.putStringState(trustAsset.getEvaluatedNodeId(), trustAsset.toJSONString());
@@ -122,8 +122,9 @@ public class TrustMd extends ChaincodeBase {
         final String evaluatedNodeId = args.get(0);
 
         if (evaluatedNodeId == null) {
-            throw new RuntimeException("No evaluatedNodeId given");
+            return newErrorResponse("No evaluatedNodeId given");
         }
+
         final ArrayList<String> results = new ArrayList<>();
         try {
             final QueryResultsIterator<KeyModification> history = stub.getHistoryForKey(evaluatedNodeId);
@@ -131,7 +132,7 @@ public class TrustMd extends ChaincodeBase {
             if (history == null) {
                 final String errorMessage = String.format("Trust %s does not exist", evaluatedNodeId);
                 System.out.println(errorMessage);
-                throw new ChaincodeException(errorMessage, "Trust not found");
+                return newErrorResponse(errorMessage);
             }
 
             for (final KeyModification keyModification : history) {
@@ -156,7 +157,7 @@ public class TrustMd extends ChaincodeBase {
         if (trustState.isEmpty()) {
             final String errorMessage = String.format("Trust of node %s does not exist", evaluatedNodeId);
             System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage, "Trust not found");
+            return newErrorResponse(errorMessage);
         }
 
         return newSuccessResponse(trustState, ByteString.copyFrom(trustState, UTF_8).toByteArray());
@@ -187,17 +188,15 @@ public class TrustMd extends ChaincodeBase {
             return newSuccessResponse(newTrust.toJSONString(), ByteString.copyFrom(newTrust.toJSONString(), UTF_8).toByteArray());
         } catch (Exception e) {
             System.out.println(e.toString());
-            throw new ChaincodeException("Error", e.toString());
+            return newErrorResponse("[Error] " + e.toString());
         }
     }
 
-    public String getAllTrust(final ChaincodeStub stub) {
+    public Response getAllTrust(final ChaincodeStub stub) {
         final QueryResultsIterator<KeyValue> queryIt = stub.getStateByRange("", "");
         final ArrayList<String> results = new ArrayList<>();
         if (queryIt == null) {
-            String errorMessage = "There are no Trust Available.";
-            System.out.println(errorMessage);
-            throw new ChaincodeException(errorMessage, "Empty ChainCode");
+            return newErrorResponse("Empty ChainCode");
         }
         try {
             for (KeyValue keyValue : queryIt) {
@@ -211,7 +210,7 @@ public class TrustMd extends ChaincodeBase {
             results.add(e.getCause().getMessage());
             results.add(Arrays.toString(e.getStackTrace()));
         }
-        return results.toString();
+        return newSuccessResponse(results.toString(), ByteString.copyFrom(results.toString(), UTF_8).toByteArray());
     }
 
     public static void main(String[] args) {
