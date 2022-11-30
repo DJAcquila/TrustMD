@@ -88,7 +88,10 @@ public class TrustMd extends ChaincodeBase {
             if (func.equals("getTrust")) {
                 return getTrust(stub, params);
             }
-            return newErrorResponse("Invalid invoke function name. Expecting one of: [\"createTrust\", \"updateTrust\", \"getTrust\"]");
+            if (func.equals("delete")) {
+                return delete(stub, params);
+            }
+            return newErrorResponse("Invalid invoke function name. Expecting one of: [\"createTrust\", \"updateTrust\", \"getTrust\", \"getTrust\"]");
         } catch (Throwable e) {
             return newErrorResponse(e);
         }
@@ -167,22 +170,10 @@ public class TrustMd extends ChaincodeBase {
         final String evaluatedNodeId = args.get(0);
         final boolean exists = trustExists(stub, evaluatedNodeId);
         if (!exists) {
-            throw new RuntimeException("The asset " + evaluatedNodeId + " does not exist");
+            return newErrorResponse("The asset " + evaluatedNodeId + " does not exist");
         }
         try {
-            final String trustJSON = stub.getStringState(evaluatedNodeId);
-            final Trust currentTrust = genson.deserialize(trustJSON, Trust.class);
-            final String clusterHeadId = args.get(1);
-            final String trustDecision =  args.get(3);
-            final String degreeOfBelief = args.get(4);
-            final String mecHostId = args.get(5);
-
-            final Trust newTrust = new Trust();
-            newTrust.setEvaluatedNodeId(evaluatedNodeId);
-            newTrust.setTrustDecision(trustDecision);
-            newTrust.setDegreeOfBelief(degreeOfBelief);
-            newTrust.setMecHostId(mecHostId);
-            newTrust.setClusterHeadId(clusterHeadId);
+            final Trust newTrust = buildTrustAsset(args);
 
             stub.putStringState(evaluatedNodeId, newTrust.toJSONString());
             return newSuccessResponse(newTrust.toJSONString(), ByteString.copyFrom(newTrust.toJSONString(), UTF_8).toByteArray());
@@ -211,6 +202,16 @@ public class TrustMd extends ChaincodeBase {
             results.add(Arrays.toString(e.getStackTrace()));
         }
         return newSuccessResponse(results.toString(), ByteString.copyFrom(results.toString(), UTF_8).toByteArray());
+    }
+
+    private Response delete(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 1) {
+            return newErrorResponse("Incorrect number of arguments. Expecting 1");
+        }
+        String key = args.get(0);
+        // Delete the key from the state in ledger
+        stub.delState(key);
+        return newSuccessResponse();
     }
 
     public static void main(String[] args) {
