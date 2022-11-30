@@ -105,7 +105,7 @@ public class TrustMd extends ChaincodeBase {
         final Trust trustAsset = buildTrustAsset(args);
         final boolean exists = trustExists(stub, trustAsset.getEvaluatedNodeId());
         if (exists) {
-            return newErrorResponse("The asset " + trustAsset.getEvaluatedNodeId() + " already exists");
+            return newSuccessResponse("The asset " + trustAsset.getEvaluatedNodeId() + " already exists");
         }
         try {
             stub.putStringState(trustAsset.getEvaluatedNodeId(), trustAsset.toJSONString());
@@ -160,7 +160,7 @@ public class TrustMd extends ChaincodeBase {
         if (trustState.isEmpty()) {
             final String errorMessage = String.format("Trust of node %s does not exist", evaluatedNodeId);
             System.out.println(errorMessage);
-            return newErrorResponse(errorMessage);
+            return newSuccessResponse(errorMessage);
         }
 
         return newSuccessResponse(trustState, ByteString.copyFrom(trustState, UTF_8).toByteArray());
@@ -170,7 +170,7 @@ public class TrustMd extends ChaincodeBase {
         final String evaluatedNodeId = args.get(1);
         final boolean exists = trustExists(stub, evaluatedNodeId);
         if (!exists) {
-            return newErrorResponse("The asset " + evaluatedNodeId + " does not exist");
+            return newSuccessResponse("The asset " + evaluatedNodeId + " does not exist");
         }
         try {
             final Trust newTrust = buildTrustAsset(args);
