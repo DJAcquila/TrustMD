@@ -167,7 +167,7 @@ public class TrustMd extends ChaincodeBase {
     }
 
     private Response updateTrustDecisionAndValue(final ChaincodeStub stub, final List<String> args) {
-        final String evaluatedNodeId = args.get(0);
+        final String evaluatedNodeId = args.get(1);
         final boolean exists = trustExists(stub, evaluatedNodeId);
         if (!exists) {
             return newErrorResponse("The asset " + evaluatedNodeId + " does not exist");
